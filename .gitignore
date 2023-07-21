@@ -1,0 +1,19 @@
+# OSMD scripts
+opensheetmusicdisplay.min*
+
+# http server
+*server.py
+
+# patterns for word breaking
+scripts/czwords.txt
+
+# kancional
+scripts/kancional.json
+
+# sources
+lily_source/*
+musicxml_source/*
+
+# song data
+song_data/*
+musicxml/*

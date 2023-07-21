@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+</head>
+<body>
+<fieldset>
+<legend>Píseň</legend>
+<select name="pisen">
+<!-- <option value="403">403</option> -->
+<!-- <option value="524">524</option> -->
+<!-- <option value="518">518</option> -->
+<!-- <option value="903">903</option> -->
+</select>
+</fieldset>
+<fieldset id="sloka_fieldset">
+<legend>Sloka</legend>
+</fieldset>
+<fieldset>
+<legend>Transpozice</legend>
+<span id="transp">0</span>
+<button type="button" id="transp_plus">+</button>
+<button type="button" id="transp_minus">-</button>
+</fieldset>
+<div id="osmdContainer"/>
+<script src="opensheetmusicdisplay.min.js"></script>
+<script src="transpose-osmd-plugin.min.js"></script>
+<script>
+    // setup
+    var osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay("osmdContainer");
+    osmd.setOptions({
+        backend: "svg",
+        drawTitle: true,
+    });
+    osmd.TransposeCalculator = new opensheetmusicdisplay.TransposeCalculator();
+    <!-- https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/blob/a673e9793ce40812929c5b609ee047257cc3d864/src/MusicalScore/Graphical/EngravingRules.ts#L627 -->
+    osmd.EngravingRules.VoiceSpacingAddendVexflow = 4.5;
+    osmd.EngravingRules.MaximumLyricsElongationFactor = 1.5;
+</script>
+<script src="render.js"></script>
+</body>
+</html>
