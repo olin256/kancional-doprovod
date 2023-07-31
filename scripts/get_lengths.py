@@ -32,7 +32,10 @@ def get_lengths(fcont):
 
     music = re.sub(r"\\repeat\s+volta\s+(\d+)\s+\{(.*?)\}", multiply_volta, music, flags=re.DOTALL)
 
-    regex = r"(?<!\S)(?:es|as|[a-h](?:[ei]s)?)[,']?[\?!]?(?=$|[\[\]\(\)\^\d\s]|\\breve)|[\(\)]"
+    for bracket in ["(", ")", "[", "]"]:
+        music = music.replace(bracket, " "+bracket+" ")
+
+    regex = r"(?<!\S)(?:es|as|[a-h](?:[ei]s)?)[,']?[\?!]?(?=$|[\^\d\s]|\\breve)|[\(\)]"
 
     notes_brackets = re.findall(regex, music)
 

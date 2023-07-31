@@ -10,6 +10,9 @@ scripts/czwords.txt
 # kancional
 scripts/kancional.json
 
+# breaking model
+scripts/*.h5
+
 # sources
 lily_source/*
 musicxml_source/*
