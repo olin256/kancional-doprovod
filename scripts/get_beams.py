@@ -11,10 +11,16 @@ import os
 def left_bound(p):
     return min(pp.start.real for pp in p)
 
-lily_command = ["lilypond", "-fsvg", "-dbackend=cairo", "-dinclude-settings=settings.ly", "--output=tmp"]
+lily_command = ["lilypond", "-fsvg", "-dbackend=cairo", "-dinclude-settings=mini_settings.ly", "--output=tmp", "tmp.ly"]
 
 for fn in tqdm.tqdm(glob.glob("../lily_source/*.ly")):
-    subprocess.run(lily_command+[fn], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    with open(fn, "r", encoding="utf-8") as f:
+        fcont = f.read()
+    fcont = fcont.replace("\\relative", "\\unfoldRepeats \\relative").replace("volta 1", "volta 2")
+    with open("tmp.ly", "w", encoding="utf-8") as f:
+        f.write(fcont)
+
+    subprocess.run(lily_command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
     paths, attributes = svgpathtools.svg2paths("tmp.svg")
 
@@ -60,3 +66,4 @@ for fn in tqdm.tqdm(glob.glob("../lily_source/*.ly")):
         json.dump(list(zip(starts, ends, sizes)), f)
 
 os.remove("tmp.svg")
+os.remove("tmp.ly")
