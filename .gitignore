@@ -20,3 +20,7 @@ musicxml_source/*
 # song data
 song_data/*
 musicxml/*
+beam_data/*
+
+# python cache
+*.pyc
