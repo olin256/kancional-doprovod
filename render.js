@@ -109,7 +109,7 @@ function get_final_xml(template, lyrics, lengths) {
     len_buffer = lengths.slice();
     skip = 0;
 
-    template.find("voice").filter(function() {
+    template.find("#P1 voice").filter(function() {
         t = $(this);
         return (t.text()=="1") && !(t.siblings("rest").length);
     }).each(function() {
@@ -148,10 +148,10 @@ $(document).ready(function() {
         for (const [cislo, nazev] of data) {
             pisen_select.append("<option value='"+cislo+"'>"+cislo+" "+nazev+"</option>");
         }
+        pisen_select.on("change", song_change);
         pisen_select.trigger('change');
     });
 
-    pisen_select.on("change", song_change);
     $('input[type=radio][name=sloka]').on("change", function() {
         render_stanza(this.value);
     });
