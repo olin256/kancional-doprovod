@@ -1,5 +1,6 @@
 # OSMD scripts
 opensheetmusicdisplay.min*
+transpose-osmd-plugin*
 
 # http server
 *server.py

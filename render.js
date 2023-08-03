@@ -3,7 +3,7 @@ var current_teplate = null;
 var current_stanza = 0;
 var templates = null;
 var song_data = null;
-var cislo = null;
+var current_song = null;
 var transpose = 0;
 
 
@@ -52,8 +52,7 @@ function update_stanza_selection() {
     // $('input[type=radio][name=sloka]')
 }
 
-function song_change() {
-    cislo = this.value;
+function song_change(cislo) {
 
     Promise.all([fetch_template(cislo+"-1"), fetch_song_data(cislo)]).then(function(responses) {
         current_template = responses[0];
@@ -154,18 +153,29 @@ function lyrics_center() {
 }
 
 
-$(document).ready(function() {
-    pisen_select = $('select[name=pisen]').first();
+function auto_event(event, ui) {
+    if (ui.item) {
+        current_song = ui.item.value;
+        cislo = current_song.split(" ", 1)[0];
+        song_change(cislo);
+    } else {
+        $(this).val(current_song);
+    }
+}
 
+
+$(document).ready(function() {
     $.getJSON("selection.json", function(data) {
         data = Object.entries(data);
         // sort needed!
         data.sort((a, b) => a[0].localeCompare(b[0]));
+        var autocomplete_options = [];
         for (const [cislo, nazev] of data) {
-            pisen_select.append("<option value='"+cislo+"'>"+cislo+" "+nazev+"</option>");
+            autocomplete_options.push(cislo+" "+nazev.replaceAll(/\s+/g, ' '));
         }
-        pisen_select.on("change", song_change);
-        pisen_select.trigger('change');
+        current_song = autocomplete_options[0];
+        $("#pisen").autocomplete({source: autocomplete_options, change: auto_event, select: auto_event}).val(current_song);
+        song_change(data[0][0]);
     });
 
     $('input[type=radio][name=sloka]').on("change", function() {
