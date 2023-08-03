@@ -136,6 +136,15 @@ function do_transpose() {
 }
 
 
+function lyrics_above() {
+    osmd.EngravingRules.LyricsYMarginToBottomLine = -1000;
+    osmd.EngravingRules.LyricsYOffsetToStaffHeight = -9.0
+}
+
+function lyrics_center() {
+    osmd.EngravingRules.LyricsYMarginToBottomLine = 0.2;
+    osmd.EngravingRules.LyricsYOffsetToStaffHeight = 0.0;
+}
 
 
 $(document).ready(function() {
@@ -154,6 +163,15 @@ $(document).ready(function() {
 
     $('input[type=radio][name=sloka]').on("change", function() {
         render_stanza(this.value);
+    });
+    $('input[type=radio][name=text_pos]').on("change", function() {
+        if (this.value == "center") {
+            lyrics_center();
+        } else {
+            lyrics_above();
+        }
+        osmd.updateGraphic();
+        osmd.render();
     });
     $('#transp_plus').on("click", function() {
         transpose++;
