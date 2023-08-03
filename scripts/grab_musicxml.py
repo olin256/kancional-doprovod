@@ -96,7 +96,11 @@ for song in kancional:
 
             beam_buffer = deque(beam_buffer)
 
-            outp = re.sub(r"(<note[\s>].*?)(\s*)</note>", fix_beams, outp, flags=re.DOTALL)
+            parts = outp.split('<part id="P2">')
+
+            parts[0] = re.sub(r"(<note[\s>].*?)(\s*)</note>", fix_beams, parts[0], flags=re.DOTALL)
+
+            outp = '<part id="P2">'.join(parts)
 
         with open("../musicxml/"+tot_fname+".xml", "w", encoding="utf-8") as f:
             f.write(outp)
