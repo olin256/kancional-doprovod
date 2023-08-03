@@ -1,5 +1,6 @@
 // current_data
 var current_teplate = null;
+var current_stanza = 0;
 var templates = null;
 var song_data = null;
 var cislo = null;
@@ -20,6 +21,7 @@ async function fetch_song_data(cislo) {
 
 
 async function render_stanza(i) {
+    current_stanza = i;
     stanza = song_data["stanzas"][i];
     stanza_sheet = stanza["stanza_sheet"];
     current_template = templates[stanza_sheet];
@@ -130,9 +132,14 @@ function get_final_xml(template, lyrics, lengths) {
 
 
 function do_transpose() {
-    osmd.Sheet.Transpose = transpose;
-    osmd.updateGraphic();
-    osmd.render();
+    if (transpose == 0) {
+        // re-render due to bug in OSMD Transpose
+        render_stanza(current_stanza);
+    } else {
+        osmd.Sheet.Transpose = transpose;
+        osmd.updateGraphic();
+        osmd.render();
+    }
 }
 
 
