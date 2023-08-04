@@ -174,7 +174,12 @@ $(document).ready(function() {
             autocomplete_options.push(cislo+" "+nazev.replaceAll(/\s+/g, ' '));
         }
         current_song = autocomplete_options[0];
-        $("#pisen").autocomplete({source: autocomplete_options, change: auto_event, select: auto_event}).val(current_song);
+        $("#pisen").autocomplete({
+                source: autocomplete_options,
+                autoFocus: true,
+                change: auto_event,
+                select: auto_event,
+            }).on("focus", function() {$(this).select();}).val(current_song);
         song_change(data[0][0]);
     });
 
