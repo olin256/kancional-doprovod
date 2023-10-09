@@ -5,6 +5,7 @@ var templates = null;
 var song_data = null;
 var current_song = null;
 var transpose = 0;
+var font_size = 20;
 
 
 async function fetch_template(cislo) {
@@ -142,6 +143,13 @@ function do_transpose() {
 }
 
 
+function change_font_size() {
+    osmd.EngravingRules.LyricsHeight = font_size / 10;
+    osmd.updateGraphic();
+    osmd.render();
+}
+
+
 function lyrics_above() {
     osmd.EngravingRules.LyricsYMarginToBottomLine = -1000;
     osmd.EngravingRules.LyricsYOffsetToStaffHeight = -9.0
@@ -177,7 +185,7 @@ $(document).ready(function() {
         $("#pisen").autocomplete({
                 source: autocomplete_options,
                 autoFocus: true,
-                change: auto_event,
+                // change: auto_event,
                 select: auto_event,
             }).on("focus", function() {$(this).select();}).val(current_song);
         song_change(data[0][0]);
@@ -204,5 +212,17 @@ $(document).ready(function() {
         transpose--;
         $("#transp").text(transpose);
         do_transpose();
+    });
+    $('#font_plus').on("click", function() {
+        font_size++;
+        $("#font_size").text((font_size/10).toFixed(1));
+        change_font_size();
+    });
+    $('#font_minus').on("click", function() {
+        if (font_size > 10) {
+            font_size--;
+            $("#font_size").text((font_size/10).toFixed(1));
+            change_font_size();
+        }
     });
 });
