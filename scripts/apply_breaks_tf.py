@@ -9,6 +9,8 @@ with open("exceptions.txt", "r", encoding="utf-8") as f:
 
 cutoff = .15
 
+kratke = list("ksvz")
+
 model = tf.keras.models.load_model("tf_cz_model.h5")
 
 unisyls = set(list("aáeéiíoóuúůyý"))
@@ -75,7 +77,6 @@ def break_word_pattern(word, pattern):
 
 
 def break_lyrics(lyrs, preserve_whitespace=False):
-    kratke = list("ksvz")
     lyrs = lyrs.strip()
     if preserve_whitespace:
         lyr_parts_full = re.split(r"(\s+)", lyrs)

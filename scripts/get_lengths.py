@@ -4,7 +4,7 @@ def multiply_volta(m):
     reps = max(2, int(m.group(1)))
     return reps * (" " + m.group(2)) + " "
 
-def get_lengths(fcont):
+def extract_music(fcont):
     relsplit = fcont.split("\\relative")
 
     if len(relsplit) != 2:
@@ -26,11 +26,19 @@ def get_lengths(fcont):
     if not matched:
         return None
 
-    music = "".join(fragments[2:2*i+1])
+    music = " ".join(fragments[2:2*i+1])
 
     music = re.sub(r"\\key\s.*?\\", "", music)
-
     music = re.sub(r"\\repeat\s+volta\s+(\d+)\s+\{(.*?)\}", multiply_volta, music, flags=re.DOTALL)
+
+    return music
+
+
+def get_lengths(fcont):
+    music = extract_music(fcont)
+
+    if not music:
+        return None
 
     for bracket in ["(", ")", "[", "]"]:
         music = music.replace(bracket, " "+bracket+" ")

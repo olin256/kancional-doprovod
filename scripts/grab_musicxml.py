@@ -87,14 +87,17 @@ for song in kancional:
             with open(beam_file, "r", encoding="utf-8") as f:
                 beam_data = json.load(f)
 
-            beam_buffer = [(0,0)] * (beam_data[-1][1]+1)
-            for start, end, size in beam_data:
-                beam_buffer[start] = (1, size)
-                for i in range(start+1, end):
-                    beam_buffer[i] = (2, size)
-                beam_buffer[end] = (3, size)
+            if beam_data:
+                beam_buffer = [(0,0)] * (beam_data[-1][1]+1)
+                for start, end, size in beam_data:
+                    beam_buffer[start] = (1, size)
+                    for i in range(start+1, end):
+                        beam_buffer[i] = (2, size)
+                    beam_buffer[end] = (3, size)
 
-            beam_buffer = deque(beam_buffer)
+                beam_buffer = deque(beam_buffer)
+            else:
+                beam_buffer = deque()
 
             parts = outp.split('<part id="P2">')
 
