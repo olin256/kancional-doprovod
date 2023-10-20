@@ -1,11 +1,29 @@
 // current_data
-var current_teplate = null;
 var current_stanza = 0;
 var templates = null;
 var song_data = null;
 var current_song = null;
 var transpose = 0;
 var font_size = 20;
+
+
+// parse GET parameters
+
+const url_params = new URLSearchParams(window.location.search);
+var get_cislo = null;
+var get_sloka = null;
+
+if (url_params.has("pisen")) {
+    get_cislo = url_params.get("pisen");
+    if (url_params.has("sloka")) {
+        get_sloka = Number(url_params.get("sloka"));
+        if ((get_sloka > 0) && Number.isInteger(get_sloka)) {
+            get_sloka--;
+        } else {
+            get_sloka = null;
+        }
+    }
+}
 
 
 async function fetch_template(cislo) {
@@ -37,7 +55,7 @@ async function render_stanza(i) {
     });
 }
 
-function update_stanza_selection() {
+function update_stanza_selection(to_check=0) {
     $("#sloka_fieldset").children("input,label").remove();
     for (const [index, stanza] of song_data["stanzas"].entries()) {
         label = index+1;
@@ -49,11 +67,11 @@ function update_stanza_selection() {
     }
     $('input[type=radio][name=sloka]').on("change", function() {
         render_stanza(this.value);
-    }).first().prop("checked", true);
-    // $('input[type=radio][name=sloka]')
+    }).eq(to_check).prop("checked", true);
 }
 
-function song_change(cislo) {
+function song_change(cislo, sloka=null) {
+    var rendered = false;
 
     Promise.all([fetch_template(cislo+"-1"), fetch_song_data(cislo)]).then(function(responses) {
         current_template = responses[0];
@@ -61,9 +79,20 @@ function song_change(cislo) {
     }).then(function (r) {
         templates = new Object();
         templates[1] = current_template;
-        render_stanza(0);
 
-        update_stanza_selection();
+        sheet_available = true;
+        if (sloka in song_data["stanzas"]) {
+            sheet_available = (song_data["stanzas"][sloka]["stanza_sheet"] == 1);
+        } else {
+            sloka = 0;
+        }
+
+        if (sheet_available) {
+            render_stanza(sloka);
+            rendered = true;
+        }
+
+        update_stanza_selection(sloka);
 
     }).then(function (r) {
         extra_sheets = Object.keys(song_data["stanza_lengths"]).slice(1);
@@ -71,6 +100,10 @@ function song_change(cislo) {
             extra_sheets.map(function(sheet_no, i) {
                 templates[sheet_no] = responses[i];
             });
+        }).then(function (r) {
+            if (!rendered) {
+                render_stanza(sloka);
+            }
         });
     });
 }
@@ -174,21 +207,28 @@ function auto_event(event, ui) {
 
 $(document).ready(function() {
     $.getJSON("selection.json", function(data) {
+        song_list = data;
         data = Object.entries(data);
         // sort needed!
         data.sort((a, b) => a[0].localeCompare(b[0]));
         var autocomplete_options = [];
         for (const [cislo, nazev] of data) {
-            autocomplete_options.push(cislo+" "+nazev.replaceAll(/\s+/g, ' '));
+            autocomplete_options.push(cislo+" "+nazev);
         }
-        current_song = autocomplete_options[0];
+        if (get_cislo in song_list) {
+            current_song = get_cislo+" "+song_list[get_cislo];
+            current_cislo = get_cislo;
+        } else {
+            current_song = autocomplete_options[0];
+            current_cislo = data[0][0];
+        }
         $("#pisen").autocomplete({
                 source: autocomplete_options,
                 autoFocus: true,
                 // change: auto_event,
                 select: auto_event,
             }).on("focus", function() {$(this).select();}).val(current_song);
-        song_change(data[0][0]);
+        song_change(current_cislo, get_sloka);
     });
 
     $('input[type=radio][name=sloka]').on("change", function() {
