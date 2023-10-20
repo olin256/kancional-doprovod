@@ -7,6 +7,9 @@ import re
 from ordered_set import OrderedSet
 from collections import deque
 
+def purify(fname):
+    return os.path.splitext(os.path.basename(fname))[0]
+
 beam_part_str = ["", "begin", "continue", "end"]
 
 def fix_beams(m):
@@ -30,6 +33,12 @@ def fix_beams(m):
     return note_outp
 
 
+beam_files = {purify(fname): fname for fname in glob.glob("../beam_data/*.json")}
+for fname in glob.glob("../beam_data_alt/*.json"):
+    sn = purify(fname)
+    if sn not in beam_files:
+        beam_files[sn] = fname
+
 song_dir = "../song_data/"
 
 with open("kancional.json", "r", encoding="utf-8") as f:
@@ -38,13 +47,14 @@ with open("kancional.json", "r", encoding="utf-8") as f:
 html_select = {}
 
 for song in kancional:
-    cislo = str(song["number"]).rjust(3, "0") + song["letter"]
+    cislo = str(song["number"]).zfill(3) + song["letter"]
 
-    if not (os.path.isfile(song_dir+cislo+".json")):
+    json_file = song_dir+cislo+".json"
+    if not (os.path.isfile(json_file)):
         print(cislo, "chybi json")
         continue
 
-    with open(song_dir+cislo+".json", "r", encoding="utf-8") as f:
+    with open(json_file, "r", encoding="utf-8") as f:
         song_json = json.load(f)
 
     stanza_sheets = list(song_json["stanza_lengths"].keys())
@@ -60,7 +70,7 @@ for song in kancional:
         print(cislo, "ruzny pocet")
         continue
 
-    html_select[cislo] = song["name"]
+    html_select[cislo] = re.sub(r"\s+", " ", song["name"])
 
     for xmlfile, stanza_no, stanza_name in zip(xmlfiles, stanza_sheets, stanza_names):
         tot_fname = cislo + "-" + stanza_no
@@ -82,9 +92,8 @@ for song in kancional:
         outp += "    </work>\n"
         outp += xmlcontent[ident_pos:]
 
-        beam_file = "../beam_data/"+tot_fname+".json"
-        if os.path.isfile(beam_file):
-            with open(beam_file, "r", encoding="utf-8") as f:
+        if tot_fname in beam_files:
+            with open(beam_files[tot_fname], "r", encoding="utf-8") as f:
                 beam_data = json.load(f)
 
             if beam_data:

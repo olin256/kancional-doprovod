@@ -43,7 +43,7 @@ def get_lengths(fcont):
     for bracket in ["(", ")", "[", "]"]:
         music = music.replace(bracket, " "+bracket+" ")
 
-    regex = r"(?<!\S)(?:es|as|[a-h](?:[ei]s)?)[,']?[\?!]?(?=$|[\^\d\s]|\\breve)|[\(\)]"
+    regex = r"(?<!\S)(?:es|as|[a-h](?:[ei]s)?)[,']?[\?!]?(?=$|[\^\d\s]|\\breve)|[\(\[\)\]]"
 
     notes_brackets = re.findall(regex, music)
 
@@ -52,14 +52,14 @@ def get_lengths(fcont):
     in_bracket = False
     for fragment in notes_brackets:
         if in_bracket:
-            if fragment == ")":
+            if fragment in ")]":
                 in_bracket = False
-            else:
+            elif fragment not in "([":
                 out_lengths[-1] += 1
         else:
-            if fragment == "(":
+            if fragment in "([":
                 in_bracket = True
-            else:
+            elif fragment not in ")]":
                 out_lengths.append(0)
 
     return out_lengths

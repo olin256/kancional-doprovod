@@ -7,27 +7,41 @@ import os
 import json
 import tqdm
 
-lily_dir = "../lily_source/"
+def purify(fname):
+    return os.path.splitext(os.path.basename(fname))[0]
 
-available_lily_sources = set(os.path.basename(fname).split("-")[0] for fname in glob.iglob(lily_dir+"*-1.ly"))
+lily_dir = "../lily_source/"
+lily_dir_alt = "../lily_source_alt/"
+
+lily_files = {purify(fname): fname for fname in glob.glob(lily_dir + "*.ly")}
+
+for fname in glob.glob(lily_dir_alt + "*.ly"):
+    song_no = purify(fname)
+    if song_no not in lily_files:
+        lily_files[song_no] = fname
+
+available_lily_sources = set(sn[:-2] for sn in lily_files.keys() if sn.endswith("-1"))
+
 
 with open("kancional.json", "r", encoding="utf-8") as f:
     kancional = [s for s in json.load(f)["song"].values() if s["number"] >= 100]
 
 for song in tqdm.tqdm(kancional):
-    cislo = str(song["number"]).rjust(3, "0") + song["letter"]
+    cislo = str(song["number"]).zfill(3) + song["letter"]
 
     if cislo not in available_lily_sources:
         continue
 
-    lily_sources = glob.glob(lily_dir + cislo + "-*.ly")
+    # lily_sources = glob.glob(lily_dir + cislo + "-*.ly")
+    lily_sources = [sn for sn in lily_files.keys() if sn.startswith(cislo+"-")]
 
-    stanza_sheets = [int(os.path.basename(fname).split("-")[-1][:-3]) for fname in lily_sources]
+    # stanza_sheets = [int(os.path.basename(fname).split("-")[-1][:-3]) for fname in lily_sources]
+    stanza_sheets = [int(sn.split("-")[-1]) for sn in lily_sources]
 
     stanza_lengths = {}
 
-    for fname, num in zip(lily_sources, stanza_sheets):
-        with open(fname, "r", encoding="utf-8") as f:
+    for sn, num in zip(lily_sources, stanza_sheets):
+        with open(lily_files[sn], "r", encoding="utf-8") as f:
             fcont = f.read()
         stanza_lengths[num] = get_lengths(fcont)
 
