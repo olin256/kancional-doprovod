@@ -3,12 +3,15 @@ import glob
 import json
 import os
 import re
+from lxml import etree
 
 from ordered_set import OrderedSet
 from collections import deque
 
 def purify(fname):
     return os.path.splitext(os.path.basename(fname))[0]
+
+parser = etree.XMLParser(remove_blank_text=True)
 
 beam_part_str = ["", "begin", "continue", "end"]
 
@@ -79,18 +82,14 @@ for song in kancional:
         if stanza_name:
             cislo_enr += " (" + stanza_name + ")"
 
-        with open(xmlfile, "r", encoding="utf-8") as f:
-            xmlcontent = f.read()
+        xml = etree.parse(xmlfile, parser)
 
-        ident_pos = xmlcontent.find("  <identification>")
+        root = xml.getroot()
 
-        outp = ""
-        outp += xmlcontent[:ident_pos]
-        outp += "  <work>\n"
-        outp += "    <work-number>" + cislo_enr + "</work-number>\n"
-        outp += "    <work-title>" + song["name"] + "</work-title>\n"
-        outp += "    </work>\n"
-        outp += xmlcontent[ident_pos:]
+        work = etree.Element("work")
+        etree.SubElement(work, "work-number").text = cislo_enr
+        etree.SubElement(work, "work-title").text = song["name"]
+        root.insert(0, work)
 
         if tot_fname in beam_files:
             with open(beam_files[tot_fname], "r", encoding="utf-8") as f:
@@ -108,14 +107,25 @@ for song in kancional:
             else:
                 beam_buffer = deque()
 
-            parts = outp.split('<part id="P2">')
+            part = root.find("part")
 
-            parts[0] = re.sub(r"(<note[\s>].*?)(\s*)</note>", fix_beams, parts[0], flags=re.DOTALL)
+            for note in part.iter("note"):
+                if note.findtext("voice") != "1":
+                    continue
+                if note.find("rest") is not None:
+                    continue
+                if note.findtext("type") in ["whole", "breve"]:
+                    continue
+                beam = note.find("beam")
+                if beam is not None:
+                    note.remove(beam)
+                if beam_buffer:
+                    beam_part, size = beam_buffer.popleft()
+                    if beam_part:
+                        etree.SubElement(note, "beam", number=str(size)).text = beam_part_str[beam_part]
 
-            outp = '<part id="P2">'.join(parts)
+        xml.write("../musicxml/"+tot_fname+".xml", pretty_print=True, xml_declaration=True, encoding="utf-8")
 
-        with open("../musicxml/"+tot_fname+".xml", "w", encoding="utf-8") as f:
-            f.write(outp)
 
 with open("selection_candidate.json", "w", encoding="utf-8") as f:
     json.dump(html_select, f)
