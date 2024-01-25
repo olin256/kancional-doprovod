@@ -1,5 +1,6 @@
 from apply_breaks_tf import break_lyrics
 from get_lengths import get_lengths
+from compact_json_encoder import CompactJSONEncoder
 
 import re
 import glob
@@ -32,10 +33,8 @@ for song in tqdm.tqdm(kancional):
     if cislo not in available_lily_sources:
         continue
 
-    # lily_sources = glob.glob(lily_dir + cislo + "-*.ly")
     lily_sources = [sn for sn in lily_files.keys() if sn.startswith(cislo+"-")]
 
-    # stanza_sheets = [int(os.path.basename(fname).split("-")[-1][:-3]) for fname in lily_sources]
     stanza_sheets = [int(sn.split("-")[-1]) for sn in lily_sources]
 
     stanza_lengths = {}
@@ -66,4 +65,4 @@ for song in tqdm.tqdm(kancional):
         # print(cislo, delky)
 
     with open("../song_data/"+cislo+".json", "w", encoding="utf-8") as f:
-        json.dump(outp, f, ensure_ascii=False)
+        json.dump(outp, f, ensure_ascii=False, cls=CompactJSONEncoder)
