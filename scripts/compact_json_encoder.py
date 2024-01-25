@@ -46,7 +46,7 @@ class CompactJSONEncoder(json.JSONEncoder):
         if not o:
             return "{}"
         self.indentation_level += 1
-        output = [f"{self.indent_str}{json.dumps(k)}: {self.encode(v)}" for k, v in o.items()]
+        output = [f"{self.indent_str}{json.dumps(str(k))}: {self.encode(v)}" for k, v in o.items()]
         self.indentation_level -= 1
         return "{\n" + ",\n".join(output) + "\n" + self.indent_str + "}"
 
