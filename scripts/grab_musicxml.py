@@ -4,6 +4,7 @@ import json
 import os
 import re
 from lxml import etree
+from fix_xml import *
 
 from ordered_set import OrderedSet
 from collections import deque
@@ -85,6 +86,10 @@ for song in kancional:
         xml = etree.parse(xmlfile, parser)
 
         root = xml.getroot()
+
+        remove_garbage(root)
+        merge_parts(root)
+        remove_extra_clefs(root)
 
         work = etree.Element("work")
         etree.SubElement(work, "work-number").text = cislo_enr
