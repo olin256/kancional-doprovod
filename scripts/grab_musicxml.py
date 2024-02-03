@@ -87,7 +87,11 @@ for song in kancional:
 
         remove_garbage(root)
         merge_parts(root)
-        remove_extra_clefs(root)
+
+        part = root.find("part")
+
+        remove_extra_clefs(part)
+        fix_pickup(part)
 
         work = etree.Element("work")
         etree.SubElement(work, "work-number").text = cislo_enr
@@ -109,8 +113,6 @@ for song in kancional:
                 beam_buffer = deque(beam_buffer)
             else:
                 beam_buffer = deque()
-
-            part = root.find("part")
 
             for note in part.iter("note"):
                 if note.findtext("voice") != "1":

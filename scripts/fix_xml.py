@@ -61,11 +61,24 @@ def remove_garbage(root, bad_elements=bad_elements, bad_attributes=bad_attribute
                     del el.attrib[attr]
 
 
-def remove_extra_clefs(root):
-    for el in islice(root.find("part").iter("attributes"), 1, None):
+def remove_extra_clefs(part):
+    for el in islice(part.iter("attributes"), 1, None):
         if el.find("clef") is not None:
             attr = el.getparent()
             if len(attr) > 1:
                 attr.remove(el)
             else:
                 attr.getparent().remove(attr)
+
+
+def fix_pickup(part):
+    first_measure = part.find("measure")
+    attributes = first_measure.find("attributes")
+    if (time := attributes.find("time")) is not None:
+        divisions = int(attributes.findtext("divisions"))
+        full_measure_len = 4*divisions*int(time.findtext("beats")) // int(time.findtext("beat-type"))
+        first_measure_len = sum(int(n.findtext("duration")) for n in first_measure.iterchildren("note") if (n.findtext("voice") == "1") and (n.find("chord") is None))
+        if full_measure_len != first_measure_len:
+            first_measure.set("implicit", "yes")
+            for i, measure in enumerate(part.iterchildren("measure")):
+                measure.set("number", str(i))
