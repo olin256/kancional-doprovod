@@ -121,13 +121,14 @@ for song in kancional:
                     continue
                 if note.findtext("type") in ["whole", "breve"]:
                     continue
-                beam = note.find("beam")
-                if beam is not None:
+                if (beam := note.find("beam")) is not None:
                     note.remove(beam)
                 if beam_buffer:
                     beam_part, size = beam_buffer.popleft()
                     if beam_part:
-                        etree.SubElement(note, "beam", number=str(size)).text = beam_part_str[beam_part]
+                        beam = etree.Element("beam", number=str(size))
+                        beam.text = beam_part_str[beam_part]
+                        note.find("staff").addnext(beam)
 
         xml.write("../musicxml/"+tot_fname+".xml", pretty_print=True, xml_declaration=True, encoding="utf-8")
 
