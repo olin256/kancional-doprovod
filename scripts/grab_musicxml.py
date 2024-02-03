@@ -5,12 +5,10 @@ import os
 import re
 from lxml import etree
 from fix_xml import *
+from fname_utils import purify
 
 from ordered_set import OrderedSet
 from collections import deque
-
-def purify(fname):
-    return os.path.splitext(os.path.basename(fname))[0]
 
 parser = etree.XMLParser(remove_blank_text=True)
 

@@ -29,7 +29,9 @@ def merge_parts(root):
             curr_clef = clef
 
         first_part = parts[0]
-        for part in parts[1:]:
+        for i, part in enumerate(parts[1:], 1):
+            for voice in part.iter("voice"):
+                voice.text = str(int(voice.text) + 4*i)
             for m1, m2 in zip(*(p.iterchildren("measure") for p in [first_part, part])):
                 backup = m1.find("backup")
                 if backup is None:
