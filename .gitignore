@@ -1,6 +1,6 @@
 # OSMD scripts
-opensheetmusicdisplay.min*
-transpose-osmd-plugin*
+*opensheetmusicdisplay.min*
+*transpose-osmd-plugin*
 
 # http server
 *server.py
@@ -16,12 +16,23 @@ scripts/*.h5
 
 # sources
 lily_source/*
+lily_source_alt/*
 musicxml_source/*
 
 # song data
 song_data/*
 musicxml/*
 beam_data/*
+beam_data_alt/*
 
 # python cache
 *.pyc
+
+# temporary stuff
+ly/*
+pdf_tmp/*
+pdf_crop/*
+pdf/*
+tex/*
+log_ly/*
+log_tex/*
