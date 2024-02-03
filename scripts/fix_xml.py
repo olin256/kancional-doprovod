@@ -82,3 +82,46 @@ def fix_pickup(part):
             first_measure.set("implicit", "yes")
             for i, measure in enumerate(part.iterchildren("measure")):
                 measure.set("number", str(i))
+
+
+def remove_tie(note, dir):
+    for tie in note.iterchildren("tie"):
+        if tie.get("type") == dir:
+            note.remove(tie)
+    if (notations := note.find("notations")) is not None:
+        for tied in notations.iterchildren("tied"):
+            if tied.get("type") == dir:
+                notations.remove(tied)
+        if len(notations) == 0:
+            note.remove(notations)
+
+
+def remove_extra_ties(part):
+    note_lists = dict()
+    for note in part.iter("note"):
+        voice = int(note.findtext("voice"))
+        if voice not in note_lists:
+            note_lists[voice] = []
+        note_lists[voice].append(note)
+    for notes in note_lists.values():
+        prev_note = None
+        prev_started_tie = False
+        for note in notes:
+            remove_stop = False
+            remove_prev_start = prev_started_tie
+            starts_tie = False
+            for tie in note.iterchildren("tie"):
+                tie_type = tie.get("type")
+                if tie_type == "stop":
+                    if prev_started_tie:
+                        remove_prev_start = False
+                    else:
+                        remove_stop = True
+                else:
+                    starts_tie = True
+            if remove_stop:
+                remove_tie(note, "stop")
+            if remove_prev_start:
+                remove_tie(prev_note, "start")
+            prev_note = note
+            prev_started_tie = starts_tie

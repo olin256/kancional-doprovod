@@ -91,6 +91,7 @@ for song in kancional:
         part = root.find("part")
 
         remove_extra_clefs(part)
+        remove_extra_ties(part)
         fix_pickup(part)
 
         work = etree.Element("work")
