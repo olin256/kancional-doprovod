@@ -1,10 +1,20 @@
 import json
 import subprocess
 import re
+import argparse
 from glob import iglob
 from fname_utils import purify
 from musicxml_to_ly import musicxml_to_ly
 from ordered_set import OrderedSet
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--full", action=argparse.BooleanOptionalAction)
+parser.add_argument("-i", "--inspect", action=argparse.BooleanOptionalAction)
+args = parser.parse_args()
+if args.full:
+    trs = {0: "c c", 1: "c cis", 2: "c d", 3: "c es", 4: "c e", 5: "c f", 6: "c fis", 7: "c g", -1: "c b,", -2: "c bes,", -3: "c a,", -4: "c as,", -5: "c g,", -6: "c fis,", -7: "c f,"}
+else:
+    trs = {0: "c c"}
 
 with open("selection_candidate.json", "r") as f:
     songs = json.load(f)
@@ -16,10 +26,6 @@ templates = dict()
 for fname in iglob("../ly_templates/*.ly"):
     with open(fname, "r", encoding="utf-8") as f:
         templates[purify(fname)] = f.read()
-
-trs = {0: "c c", 1: "c cis", 2: "c d", 3: "c es", 4: "c e", 5: "c f", 6: "c fis", 7: "c g", -1: "c b,", -2: "c bes,", -3: "c a,", -4: "c as,", -5: "c g,", -6: "c fis,", -7: "c f,"}
-# trs = {0: "c c"}
-# trs = {-2: "c bes,"}
 
 roman = "I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI,XV,XVI,XVII,XVIII,XIX,XX,XXI,XXII,XXIII,XXIV,XXV".split(",")
 
@@ -53,7 +59,7 @@ for song, song_name in songs.items():
         for i, s in enumerate(stanzas):
             lyrics = s["lyrics"]
             lyrics = re.sub(r"-+", " -- ", lyrics)
-            lyrics = re.sub(r"[:(.*?):]", " \1 \1 ", lyrics)
+            lyrics = re.sub(r"\[:(.*?):\]", r" \1 \1 ", lyrics)
             lyrics = re.sub(r"\s+", " ", lyrics)
             ly_lyrics += f"sloka{roman[i]} = \\lyricmode {{ \\set stanza = \"{str(i+1)}.\"\n"
             ly_lyrics += lyrics
@@ -91,6 +97,8 @@ for song, song_name in songs.items():
                     f.write(ly_source)
                 with open("../log_ly/"+fn+".log", "w", encoding="utf-8") as f:
                     f.write(res.stderr)
+                break
+            if args.inspect:
                 break
 
             subprocess.run(["pdfcrop", pdf_fname, crop_fname], shell=True, capture_output=True)
