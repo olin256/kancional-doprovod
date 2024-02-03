@@ -1,0 +1,142 @@
+\voffset=\dimexpr1cm-1in\relax
+\hoffset=\dimexpr1cm-1in\relax
+\vsize=\dimexpr297mm-2cm\relax
+\hsize=\dimexpr210mm-2cm\relax
+\newdimen\firstvsize
+\newdimen\othervsize
+\newdimen\targetvsize
+\targetvsize=\dimexpr297mm-2cm\relax
+\pageheight=297mm
+\pagewidth=210mm
+\parindent=0pt
+\baselineskip=14.5pt
+\newbox\smallstrutbox
+\setbox\smallstrutbox=\hbox{\unhbox\strutbox}
+\setbox\strutbox=\hbox{\vrule width0pt height10.14995pt depth4.35005pt}
+
+\input minim-pdf
+\hyperlinkstyle{/Border [0 0 0.5] /C [1 0 0]}
+\input luaotfload.sty
+\font\twelverm={name:C059} at 12pt
+\font\twelvebf={name:C059 Bold} at 12pt
+\font\tenrm={name:C059} at 10pt
+\font\tenit={name:C059 Italic} at 10pt
+\font\tenbf={name:C059 Bold} at 10pt
+\font\numfont={name:C059} at 35.83pt
+\font\namefont={name:C059} at 20.7pt
+
+\input pgffor
+
+\newdimen\maxthree
+\maxthree=\dimexpr\hsize/3-1cm\relax
+\newdimen\maxtwo
+\maxtwo=\dimexpr\hsize/2-1cm\relax
+\newdimen\maxwd
+\newif\ifprvni
+\def\setupsloka{\let\slokarm=\twelverm \let\slokabf=\twelvebf}
+\def\slokaline#1{\hbox{\ifprvni\llap{\slokabf\currsloka. }\fi\strut#1}\prvnifalse}
+\def\sloka#1#2{%
+    \setbox#1=\vtop{\setupsloka\def\currsloka{#1}\slokarm\prvnitrue #2}%
+    \ifdim\wd#1>\maxwd \maxwd=\wd#1\fi
+}
+
+\input ../tex/\jobname
+
+\let\next\relax
+\ifdim\maxwd>\maxtwo
+    \def\setupsloka{\let\slokarm=\tenrm \let\slokabf=\tenbf \baselineskip=12pt \let\strutbox=\smallstrutbox}
+    \def\next{\input ../tex/\jobname}
+\fi
+\next
+
+\newbox\slokybox
+\newdimen\slokaskip
+\slokaskip=5mm
+\newcount\maxrow
+\foreach \i in {2,...,\maxsloka} {\wd\i=\maxwd}
+\def\deleteforeach\foreach\i in #1 #2{}
+\def\printtwo{%
+    \maxrow=\numexpr\maxsloka-1\relax
+    \divide\maxrow by2\relax
+    \ifnum\maxrow=0 \let\next\deleteforeach \else \let\next\relax \fi
+    \next
+    \foreach \i in {1,...,\maxrow} {%
+        \line{\hfil \box\numexpr2*\i\relax \hfil\hfil \box\numexpr2*\i+1\relax \hfil}%
+        \vskip\slokaskip
+    }%
+    \ifodd\maxsloka \unskip \else
+        \vskip\slokaskip
+        \line{\hfil\box\maxsloka\hfil}%
+    \fi
+}
+\def\printthree{%
+    \maxrow=\numexpr\maxsloka-1\relax
+    \divide\maxrow by3\relax
+    \ifnum\maxrow=0 \let\next\deleteforeach \else \let\next\relax \fi
+    \next
+    \foreach \i in {1,...,\maxrow} {%
+        \line{\hfil \box\numexpr3*\i-1\relax \hfil\hfil \box\numexpr3*\i\relax \hfil\hfil \box\numexpr3*\i+1\relax \hfil}%
+        \vskip\slokaskip
+    }%
+    \ifnum\pretokslok=0 \unskip \fi
+    \ifnum\pretokslok=1
+        \line{\hfil\box\maxsloka\hfil}%
+    \fi
+    \ifnum\pretokslok=2
+        \line{\hfil \box\numexpr\maxsloka-1\relax \hfil \box\maxsloka \hfil}%
+    \fi
+}
+\ifdim\maxwd<\maxthree \let\printsloky\printthree \else \let\printsloky\printtwo \fi
+\setbox\slokybox=\vbox{\printsloky}
+
+\newbox\titlebox
+\setbox\titlebox=\line{\numfont\cislo \namefont\quad\jmeno \hfil \twelverm\transpozice}
+
+\newbox\footerbox
+\setbox\footerbox=\vbox{\tenrm
+    \catcode`\~=12
+    \def\mypage{https://karlin.mff.cuni.cz/~slavika/kancional}%
+    \centerline{\strut Doprovody k Jednotnému kancionálu \hyperlink url{\mypage}\mypage\endlink}%
+    \def\rpage{https://ddh9.webnode.cz/}%
+    \centerline{\strut digizalizace not: Zbyněk Rumler \hyperlink url{\rpage}\rpage\endlink\quad digizalizace textů: tým \hyperlink url{https://kancional.cz/}kancional.cz\endlink}%
+    \centerline{\strut Podle \tenit Varhanní doprovod kancionálu; Musica sacra, Brno 1994}%
+}
+\newbox\headerbox
+\setbox\headerbox=\line{\twelvebf\cislo\quad\twelverm\jmeno\hfil\transpozice}
+
+\firstvsize=\dimexpr\vsize-\ht\titlebox-\ht\footerbox-1.4cm\relax
+\othervsize=\dimexpr\vsize-\ht\headerbox-\ht\footerbox-1.4cm\relax
+
+\vsize=\firstvsize
+
+\output={%
+    \shipout\vbox to\targetvsize{%
+        \ifnum\pageno>1
+            \copy\headerbox
+            \vskip1cm\relax
+        \fi
+        \unvbox255
+        \vskip 4mm plus1fil\relax
+        \copy\footerbox
+    }%
+    \ifnum\pageno=1 \global\vsize=\othervsize \fi
+    \global\advance\pageno by1
+}
+
+\box\titlebox
+\vskip1cm\relax
+
+\foreach \i in {1,...,\maxsloka} {%
+    \saveimageresource page\i {../pdf_crop/\jobname.pdf}%
+    \line{\hss\useimageresource\lastsavedimageresourceindex}%
+    \ifnum\i=1
+        \vskip\slokaskip
+        \unvbox\slokybox
+        \vfil\eject
+    \else
+        \vskip 1cmplus1fil\relax
+    \fi
+}
+
+
+\end
