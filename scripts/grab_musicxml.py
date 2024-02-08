@@ -5,6 +5,7 @@ import os
 import re
 from lxml import etree
 from fix_xml import *
+from add_breath_marks import add_breath_marks
 from fname_utils import purify
 
 from ordered_set import OrderedSet
@@ -14,32 +15,7 @@ parser = etree.XMLParser(remove_blank_text=True)
 
 beam_part_str = ["", "begin", "continue", "end"]
 
-def fix_beams(m):
-    note = m.group(0)
-    if "<voice>1</voice>" not in note:
-        return note
-    if ("<type>whole</type>" in note) or ("<type>breve</type>" in note) or ("<rest/>" in note):
-        return note
-    note_part = m.group(1)
-    indent = m.group(2)
-    note_outp = re.sub(r"\s*<beam[\s>].*</beam>", "", note_part, count=1, flags=re.DOTALL)
-    if beam_buffer:
-        beam_part, size = beam_buffer.popleft()
-        if beam_part:
-            note_outp += indent
-            note_outp += '<beam number="'+str(size)+'">'
-            note_outp += beam_part_str[beam_part]
-            note_outp += '</beam>'
-    note_outp += indent + "</note>"
-
-    return note_outp
-
-
 beam_files = {purify(fname): fname for fname in glob.glob("../beam_data/*.json")}
-for fname in glob.glob("../beam_data_alt/*.json"):
-    sn = purify(fname)
-    if sn not in beam_files:
-        beam_files[sn] = fname
 
 song_dir = "../song_data/"
 
@@ -99,6 +75,11 @@ for song in kancional:
         etree.SubElement(work, "work-title").text = song["name"]
         root.insert(0, work)
 
+        has_repeat = part.find(".//repeat") is not None
+
+        with open(f"../lily_source/{tot_fname}.ly", "r", encoding="utf-8") as f:
+            add_breath_marks(part, f, has_repeat)
+
         if tot_fname in beam_files:
             with open(beam_files[tot_fname], "r", encoding="utf-8") as f:
                 beam_data = json.load(f)
@@ -119,6 +100,8 @@ for song in kancional:
                 if note.findtext("voice") != "1":
                     continue
                 if note.find("rest") is not None:
+                    continue
+                if note.find("chord") is not None:
                     continue
                 if note.findtext("type") in ["whole", "breve"]:
                     continue
