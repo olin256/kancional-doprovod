@@ -37,6 +37,9 @@ def extract_music(fcont, has_repeat=False):
 
     music = re.sub(r"\\key\s.*?\\", "", music)
 
+    for bracket in ["(", ")", "[", "]"]:
+        music = music.replace(bracket, " "+bracket+" ")
+
     if expand_repeats:
         music = re.sub(r"\\repeat\s+volta\s+(?P<reps>\d+)\s+\{(?P<bnum>\d+)@(?P<content>.*?)\}(?P=bnum)@", multiply_volta, music, flags=re.DOTALL)
         music = re.sub(r"([\{\}])\d+@", r"\1", music)
@@ -49,9 +52,6 @@ def get_lengths(fcont):
 
     if not music:
         return None
-
-    for bracket in ["(", ")", "[", "]"]:
-        music = music.replace(bracket, " "+bracket+" ")
 
     regex = note_regex + r"|[\(\[\)\]]"
 
