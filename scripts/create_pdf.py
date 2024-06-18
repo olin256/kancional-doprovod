@@ -2,19 +2,33 @@ import json
 import subprocess
 import re
 import argparse
+import os
 from glob import iglob
 from fname_utils import purify
-from musicxml_to_ly import musicxml_to_ly
+from musicxml_to_ly import musicxml_to_ly, keys as fifths_to_pitch
 from ordered_set import OrderedSet
+
+easy_keys = ["c", "des", "d", "es", "e", "f", "fis", "g", "as", "a", "bes", "b"]
+
+def transpose_str(fifths, shift):
+    semitones_from_c = (7*fifths) % 12
+    target = semitones_from_c + shift
+    octave_mark = ""
+    if target >= 12:
+        octave_mark = "'"
+    elif target < 0:
+        octave_mark = ","
+    return fifths_to_pitch[fifths] + " " + easy_keys[target % 12] + octave_mark
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--full", action=argparse.BooleanOptionalAction)
 parser.add_argument("-i", "--inspect", action=argparse.BooleanOptionalAction)
+parser.add_argument("-s", "--skip-bad", action=argparse.BooleanOptionalAction)
 args = parser.parse_args()
 if args.full:
-    trs = {0: "c c", 1: "c cis", 2: "c d", 3: "c es", 4: "c e", 5: "c f", 6: "c fis", 7: "c g", -1: "c b,", -2: "c bes,", -3: "c a,", -4: "c as,", -5: "c g,", -6: "c fis,", -7: "c f,"}
+    trs = range(-7, 8)
 else:
-    trs = {0: "c c"}
+    trs = range(1)
 
 with open("selection_candidate.json", "r") as f:
     songs = json.load(f)
@@ -26,6 +40,8 @@ templates = dict()
 for fname in iglob("../ly_templates/*.ly"):
     with open(fname, "r", encoding="utf-8") as f:
         templates[purify(fname)] = f.read()
+
+bad = set(map(purify, iglob("../log_ly/*.log")))
 
 roman = "I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI,XV,XVI,XVII,XVIII,XIX,XX,XXI,XXII,XXIII,XXIV,XXV".split(",")
 
@@ -43,6 +59,9 @@ for song, song_name in songs.items():
 
     if song_type == "p":
         fn = song+"-1"
+        if args.skip_bad and (fn in bad):
+            continue
+
         in_fn = "../musicxml/"+fn+".xml"
 
         current_template, score_template = current_template.split("% SCORE", 1)
@@ -51,6 +70,8 @@ for song, song_name in songs.items():
 
         with open(in_fn, "r", encoding="utf-8") as f:
             voices = musicxml_to_ly(f)
+            f.seek(0)
+            fifths = int(re.search(r"<fifths>(-?\d)</fifths>", f.read())[1])
 
         current_template = current_template.replace("% VOICES", voices, 1)
 
@@ -59,7 +80,7 @@ for song, song_name in songs.items():
         for i, s in enumerate(stanzas):
             lyrics = s["lyrics"]
             lyrics = re.sub(r"-+", " -- ", lyrics)
-            lyrics = re.sub(r"\[:(.*?):\]", r" \1 \1 ", lyrics)
+            lyrics = re.sub(r"\[:(.*?):\]", r" \1 \1 ", lyrics, flags=re.DOTALL)
             lyrics = re.sub(r"\s+", " ", lyrics)
             ly_lyrics += f"sloka{roman[i]} = \\lyricmode {{ \\set stanza = \"{str(i+1)}.\"\n"
             ly_lyrics += lyrics
@@ -77,11 +98,14 @@ for song, song_name in songs.items():
             tex_source += "\n".join(f"    \\slokaline{{{sl}}}" for sl in stanza_lyrics)
             tex_source += "}\n"
 
-        for shift, tr in trs.items():
+        for shift in trs:
             fn_shift = fn+"_"+str(shift)
             pdf_fname = "../pdf_tmp/"+fn_shift
             crop_fname = "../pdf_crop/"+fn_shift+".pdf"
-            score_template_transposed = score_template.replace("% TRANSPOSE", tr, 1)
+            final_fname = "../pdf/"+fn_shift+".pdf"
+            if os.path.isfile(final_fname):
+                continue
+            score_template_transposed = score_template.replace("% TRANSPOSE", transpose_str(fifths, shift), 1)
             ly_source = current_template
             for i in range(len(stanzas)):
                 curr_score_template = score_template_transposed.replace("\\SLOKA", "\\sloka"+roman[i], 1)

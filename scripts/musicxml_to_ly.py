@@ -7,7 +7,7 @@ voice_names = ["soprano", "alto", "tenor", "bass"]
 
 octave_marks = [",,,", ",,", ",", "", "'", "''", "'''"]
 note_lens = {"16th": "16", "eighth": "8", "quarter": "4", "half": "2", "whole": "1"}
-keys = {0: "c", 1: "g", 2: "d", 3: "a", 4: "e", 5: "b", -1: "f", -2: "bes", -3: "es", -4: "as", -5: "des"}
+keys = {0: "c", 1: "g", 2: "d", 3: "a", 4: "e", 5: "b", 6: "fis", -1: "f", -2: "bes", -3: "es", -4: "as", -5: "des"}
 
 def note_to_ly(note):
     if (pitch := note.find("pitch")) is not None:
@@ -52,16 +52,14 @@ def musicxml_to_ly(xml_file):
         key = keys[key_fifths] + " \\major"
     else:
         key = "c \\major"
-    time_el = attributes.find("time")
-    free_time = time_el is None
 
-    if not free_time:
-        time_sig = time_el.findtext("beats") + "/" + time_el.findtext("beat-type")
+    free_time = attributes.find("time") is None
 
     voice_total_str = ""
 
     for voice, vname in zip(voices, voice_names):
         repeat_open = False
+        add_starting_repeat = False
         voice_output = []
         for measure in measures:
             measure_duration = 0
@@ -69,6 +67,8 @@ def musicxml_to_ly(xml_file):
             tags_to_iterate = ["note"]
             if voice == 1:
                 tags_to_iterate.append("barline")
+                if not free_time:
+                    tags_to_iterate.append("attributes")
             for el in measure.iterchildren(*tags_to_iterate):
                 if el.tag == "note":
                     if int(el.findtext("voice")) != voice:
@@ -109,8 +109,7 @@ def musicxml_to_ly(xml_file):
                         if notations.find(".//breath-mark") is not None:
                             measure_els.append("\\breathe")
 
-                else:
-                    # barline
+                elif el.tag == "barline":
                     if (repeat := el.find("repeat")) is not None:
                         if repeat.get("direction") == "forward":
                             measure_els.append("\\repeat volta 2 {")
@@ -118,11 +117,16 @@ def musicxml_to_ly(xml_file):
                         else:
                             measure_els.append("}")
                             if not repeat_open:
-                                voice_output[0].appendleft("\\repeat volta 2 {")
+                                add_starting_repeat = True
                             repeat_open = False
                     else:
                         if el.findtext("bar-style") == "light-light":
                             measure_els.append('\\bar "||"')
+
+                elif el.tag == "attributes":
+                    if (time_el := el.find("time")) is not None:
+                        time_sig = time_el.findtext("beats") + "/" + time_el.findtext("beat-type")
+                        measure_els.append("\\time " + time_sig)
 
             sixteens = str((4*measure_duration) // divisions)
             if free_time:
@@ -131,9 +135,11 @@ def musicxml_to_ly(xml_file):
                 measure_els.appendleft("\\partial 16*" + sixteens)
             voice_output.append(measure_els)
 
+        if add_starting_repeat:
+            voice_output[0].appendleft("\\repeat volta 2 {")
+
         voice_start_els = []
-        if not free_time:
-            voice_start_els.append("\\time " + time_sig)
+
         voice_start_els.append("\\clef " + ('"bass"' if voice > 2 else '"treble"'))
         voice_start_els.append("\\key " + key)
         voice_start = " ".join(voice_start_els)
