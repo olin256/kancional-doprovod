@@ -3,6 +3,8 @@
     ragged-bottom = ##t
     left-margin = 1.2\cm
     right-margin = 1\cm
+    top-margin = 2\cm
+    bottom-marin = 2\cm
     print-page-number = ##f
     markup-system-spacing = #'((basic-distance . 12)
        (minimum-distance . 6)

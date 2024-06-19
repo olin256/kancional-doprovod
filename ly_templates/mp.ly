@@ -6,6 +6,10 @@
     % subtitle = "SUBTITLE"
 % }
 
+\paper {
+    % SYSTEM_COUNT
+}
+
 % VOICES
 
 % LYRICS
@@ -13,6 +17,9 @@
 % SCORE
 
 \score {
+    \header {
+        % SCORE_TITLE
+    }
     \transpose % TRANSPOSE {
     << \new PianoStaff
         <<
