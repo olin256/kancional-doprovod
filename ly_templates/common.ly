@@ -6,9 +6,10 @@
     top-margin = 2\cm
     bottom-marin = 2\cm
     print-page-number = ##f
-    markup-system-spacing = #'((basic-distance . 12)
-       (minimum-distance . 6)
-       (padding . 4)
+    scoreTitleMarkup = \markup { \italic \fromproperty #'header:piece }
+    markup-system-spacing = #'((basic-distance . 2)
+       (minimum-distance . 2)
+       (padding . 1)
        (stretchability . 2))
     system-system-spacing = #'((basic-distance . 12)
        (minimum-distance . 6)

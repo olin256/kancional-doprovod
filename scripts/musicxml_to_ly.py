@@ -57,6 +57,10 @@ def musicxml_to_ly(xml_file):
 
     voice_total_str = ""
 
+    tags_to_iterate = ["note", "barline"]
+    if not free_time:
+        tags_to_iterate.append("attributes")
+
     for voice, vname in zip(voices, voice_names):
         repeat_open = False
         add_starting_repeat = False
@@ -64,11 +68,6 @@ def musicxml_to_ly(xml_file):
         for measure in measures:
             measure_duration = 0
             measure_els = deque()
-            tags_to_iterate = ["note"]
-            if voice == 1:
-                tags_to_iterate.append("barline")
-                if not free_time:
-                    tags_to_iterate.append("attributes")
             for el in measure.iterchildren(*tags_to_iterate):
                 if el.tag == "note":
                     if int(el.findtext("voice")) != voice:
@@ -125,6 +124,8 @@ def musicxml_to_ly(xml_file):
 
                 elif el.tag == "attributes":
                     if (time_el := el.find("time")) is not None:
+                        if time_el.get("print-object") == "no":
+                            measure_els.append("\\once \\override Staff.TimeSignature.stencil = ##f")
                         time_sig = time_el.findtext("beats") + "/" + time_el.findtext("beat-type")
                         measure_els.append("\\time " + time_sig)
 

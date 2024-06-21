@@ -2,7 +2,6 @@
 \hoffset=\dimexpr1cm-1in\relax
 \vsize=\dimexpr297mm-2cm\relax
 \hsize=\dimexpr210mm-2cm\relax
-\newdimen\firstvsize
 \newdimen\othervsize
 \newdimen\targetvsize
 \targetvsize=\dimexpr297mm-2cm\relax
@@ -28,22 +27,32 @@
 \input pgffor
 
 \newdimen\maxthree
-\maxthree=\dimexpr\hsize/3-1cm\relax
+\maxthree=\dimexpr\hsize/3-.5cm\relax
 \newdimen\maxtwo
-\maxtwo=\dimexpr\hsize/2-1cm\relax
+\maxtwo=\dimexpr\hsize/2-.5cm\relax
 \newdimen\maxwd
 \newif\ifprvni
+\newcount\slokacounter
+\slokacounter=1
 \def\setupsloka{\let\slokarm=\twelverm \let\slokabf=\twelvebf}
-\def\slokaline#1{\hbox{\ifprvni\llap{\slokabf\currsloka. }\fi\strut#1}\prvnifalse}
-\def\sloka#1#2{%
-    \setbox#1=\vtop{\setupsloka\def\currsloka{#1}\slokarm\prvnitrue #2}%
-    \ifdim\wd#1>\maxwd \maxwd=\wd#1\fi
+\def\slokaline#1{\vbox{%
+    \ifprvni\ifx\section\empty\else\vbox to0pt{\vss\hbox{\tenit\section}}\fi\fi
+    \hbox{\ifprvni\llap{\slokabf\currsloka. }\fi\strut#1}%
+}\prvnifalse}
+\def\sloka#1#2#3{%
+    \advance\slokacounter1\relax
+    \setbox\slokacounter=\vtop{\setupsloka\def\currsloka{#1}\def\section{#2}\slokarm\prvnitrue #3}%
+    \ifdim\wd\slokacounter>\maxwd \maxwd=\wd\slokacounter\fi
 }
 
 \input ../tex/\jobname
 
+\newcount\pocetslok
+\pocetslok=\numexpr\maxsloka-\minsloka+1\relax
+
 \let\next\relax
 \ifdim\maxwd>\maxtwo
+    \slokacounter=1
     \def\setupsloka{\let\slokarm=\tenrm \let\slokabf=\tenbf \baselineskip=12pt \let\strutbox=\smallstrutbox}
     \def\next{\input ../tex/\jobname}
 \fi
@@ -53,10 +62,10 @@
 \newdimen\slokaskip
 \slokaskip=5mm
 \newcount\maxrow
-\foreach \i in {2,...,\maxsloka} {\wd\i=\maxwd}
+\foreach \i in {2,...,\pocetslok} {\wd\i=\maxwd}
 \def\deleteforeach\foreach\i in #1 #2{}
 \def\printtwo{%
-    \maxrow=\numexpr\maxsloka-1\relax
+    \maxrow=\numexpr\pocetslok-1\relax
     \divide\maxrow by2\relax
     \ifnum\maxrow=0 \let\next\deleteforeach \else \let\next\relax \fi
     \next
@@ -64,13 +73,13 @@
         \line{\hfil \box\numexpr2*\i\relax \hfil\hfil \box\numexpr2*\i+1\relax \hfil}%
         \vskip\slokaskip
     }%
-    \ifodd\maxsloka \unskip \else
+    \ifodd\pocetslok \unskip \else
         \vskip\slokaskip
-        \line{\hfil\box\maxsloka\hfil}%
+        \line{\hfil\box\pocetslok\hfil}%
     \fi
 }
 \def\printthree{%
-    \maxrow=\numexpr\maxsloka-1\relax
+    \maxrow=\numexpr\pocetslok-1\relax
     \divide\maxrow by3\relax
     \ifnum\maxrow=0 \let\next\deleteforeach \else \let\next\relax \fi
     \next
@@ -80,20 +89,27 @@
     }%
     \ifnum\pretokslok=0 \unskip \fi
     \ifnum\pretokslok=1
-        \line{\hfil\box\maxsloka\hfil}%
+        \line{\hfil\box\pocetslok\hfil}%
     \fi
     \ifnum\pretokslok=2
-        \line{\hfil \box\numexpr\maxsloka-1\relax \hfil \box\maxsloka \hfil}%
+        \line{\hfil \box\numexpr\pocetslok-1\relax \hfil \box\pocetslok \hfil}%
     \fi
 }
 \ifdim\maxwd<\maxthree \let\printsloky\printthree \else \let\printsloky\printtwo \fi
 \setbox\slokybox=\vbox{\printsloky}
 
 \newbox\titlebox
-\setbox\titlebox=\line{\numfont\cislo \namefont\quad\jmeno \hfil \twelverm\transpozice}
+\setbox\titlebox=\line{%
+    \numfont\cislo \namefont\quad
+    \vtop{\hbox{\jmeno}\ifx\podnadpis\empty\else\rlap{\strut\tenit\podnadpis}\fi}\hfil
+    \twelverm\transpozice
+}
+\dp\titlebox=0pt
 
 \newbox\footerbox
 \setbox\footerbox=\vbox{\tenrm
+    \let\strutbox=\smallstrutbox
+    \baselineskip=12pt
     \catcode`\~=12
     \def\mypage{https://karlin.mff.cuni.cz/~slavika/kancional}%
     \centerline{\strut Doprovody k Jednotnému kancionálu \hyperlink url{\mypage}\mypage\endlink}%
@@ -104,10 +120,8 @@
 \newbox\headerbox
 \setbox\headerbox=\line{\twelvebf\cislo\quad\twelverm\jmeno\hfil\transpozice}
 
-\firstvsize=\dimexpr\vsize-\ht\titlebox-\ht\footerbox-1.4cm\relax
-\othervsize=\dimexpr\vsize-\ht\headerbox-\ht\footerbox-1.4cm\relax
-
-\vsize=\firstvsize
+\vsize=\dimexpr\vsize-\ht\footerbox-1.4cm\relax
+\othervsize=\dimexpr\vsize-\ht\headerbox\relax
 
 \output={%
     \shipout\vbox to\targetvsize{%
@@ -126,7 +140,7 @@
 \box\titlebox
 \vskip1cm\relax
 
-\foreach \i in {1,...,\maxsloka} {%
+\foreach \i in {1,...,\pocetslok} {%
     \saveimageresource page\i {../pdf_crop/\jobname.pdf}%
     \line{\hss\useimageresource\lastsavedimageresourceindex}%
     \ifnum\i=1
@@ -134,9 +148,11 @@
         \unvbox\slokybox
         \vfil\eject
     \else
-        \vskip 1cmplus1fil\relax
+        \ifnum\i<\pocetslok
+            \vskip 1cm plus1fil\relax
+        \fi
     \fi
 }
 
-
+\eject
 \end
