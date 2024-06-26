@@ -1,6 +1,7 @@
 from lxml import etree
 from itertools import islice
 from copy import deepcopy
+from collections import deque
 
 bad_attributes = ["width", "default-x", "default-y"]
 bad_elements = ["defaults", "supports", "print", "midi-instrument", "midi-device"]
@@ -71,17 +72,30 @@ def remove_extra_clefs(part):
                 attr.getparent().remove(attr)
 
 
-def fix_pickup(part):
-    first_measure = part.find("measure")
+def measure_len(m):
+    return sum(int(n.findtext("duration")) for n in m.iterchildren("note") if (n.findtext("voice") == "1") and (n.find("chord") is None))
+
+def fix_measures(part):
+    measures = deque(part.iterchildren("measure"))
+    first_measure = measures[0]
     attributes = first_measure.find("attributes")
     if (time := attributes.find("time")) is not None:
         divisions = int(attributes.findtext("divisions"))
         full_measure_len = 4*divisions*int(time.findtext("beats")) // int(time.findtext("beat-type"))
-        first_measure_len = sum(int(n.findtext("duration")) for n in first_measure.iterchildren("note") if (n.findtext("voice") == "1") and (n.find("chord") is None))
+        first_measure_len = measure_len(first_measure)
         if full_measure_len != first_measure_len:
             first_measure.set("implicit", "yes")
-            for i, measure in enumerate(part.iterchildren("measure")):
-                measure.set("number", str(i))
+            first_measure.set("number", "0")
+            measures.popleft()
+        curr_measure_no = 1
+        while measures:
+            m = measures.popleft()
+            m.set("number", str(curr_measure_no))
+            if measures and (measure_len(m) < full_measure_len):
+                m = measures.popleft()
+                m.set("implicit", "yes")
+                m.set("number", "X"+str(curr_measure_no))
+            curr_measure_no += 1
 
 
 def remove_tie(note, dir):

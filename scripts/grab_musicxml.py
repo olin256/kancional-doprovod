@@ -68,7 +68,7 @@ for song in kancional:
 
         remove_extra_clefs(part)
         remove_extra_ties(part)
-        fix_pickup(part)
+        fix_measures(part)
 
         work = etree.Element("work")
         etree.SubElement(work, "work-number").text = cislo_enr
