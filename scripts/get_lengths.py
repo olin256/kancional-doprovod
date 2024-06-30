@@ -1,11 +1,37 @@
 import re
 from itertools import count
+from collections import deque
 
-note_regex = r"(?<!\S)(?:es|as|[a-h](?:[ei]s)?)[,']?[\?!]?(?=$|[\^\d\s\)\]]|\\breve)"
+note_regex = (
+    r"(?<!\S)"
+    r"(?:es|as|[a-h](?:[ei]s)?)"
+    r"[,']?"
+    r"[\?!]?"
+    r"(?=$|[\^\d\s\)\]]|\\breve)"
+)
+repeat_regex = (
+    r"\\repeat\s+volta\s+(?P<reps>\d+)\s+"
+    r"\{(?P<bn>\d+)@(?P<content>.*?)\}(?P=bn)@"
+    r"\s*"
+    r"(?:\\alternative\s+\{(?P<cn>\d+)@(?P<altcontent>.*?)\}(?P=cn)@)?"
+)
 
 def multiply_volta(m):
-    reps = max(2, int(m.group("reps")))
-    return reps * (" " + m.group("content")) + " "
+    reps = max(2, int(m["reps"]))
+    content = m["content"]
+    if altcontent := m["altcontent"]:
+        altpart_iter = re.finditer(
+            r"\{(?P<bn>\d+)@(?P<altpart>.*?)\}(?P=bn)@",
+            altcontent,
+            flags=re.DOTALL
+        )
+        alternatives = deque(n["altpart"] for n in altpart_iter)
+        first = alternatives[0]
+        for _ in range(reps-len(alternatives)):
+            alternatives.appendleft(first)
+        return " " + " ".join(f"{content} {alt}" for alt in alternatives) + " "
+    else:
+        return reps * (" " + content) + " "
 
 def extract_music(fcont, has_repeat=False):
     _, relsplit = fcont.split("\\relative", 1)
@@ -16,7 +42,6 @@ def extract_music(fcont, has_repeat=False):
 
     op = 0
     matched = False
-    # for i, bracket in enumerate(fragments[1::2]):
     for i, bracket in zip(count(1, 2), fragments[1::2]):
         if bracket == "{":
             if expand_repeats:
@@ -41,7 +66,7 @@ def extract_music(fcont, has_repeat=False):
         music = music.replace(bracket, " "+bracket+" ")
 
     if expand_repeats:
-        music = re.sub(r"\\repeat\s+volta\s+(?P<reps>\d+)\s+\{(?P<bnum>\d+)@(?P<content>.*?)\}(?P=bnum)@", multiply_volta, music, flags=re.DOTALL)
+        music = re.sub(repeat_regex, multiply_volta, music, flags=re.DOTALL)
         music = re.sub(r"([\{\}])\d+@", r"\1", music)
 
     return music
