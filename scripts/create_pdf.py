@@ -29,6 +29,13 @@ def get_templates(ext):
             ret[char] = fn
     return ret
 
+def lyrics_repetition(m):
+    lyrs = m[1]
+    if lyrs[-1] == ".":
+        return f" {lyrs[:-1]}, {lyrs} "
+    else:
+        return f" {lyrs} {lyrs} "
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--full", action=argparse.BooleanOptionalAction)
 parser.add_argument("-i", "--inspect", action=argparse.BooleanOptionalAction)
@@ -116,7 +123,7 @@ for song, song_name in tqdm(songs.items()):
             for i, (s_no, s) in enumerate(current_stanzas.items()):
                 lyrics = s["lyrics"]
                 lyrics = re.sub(r"-+", " -- ", lyrics)
-                lyrics = re.sub(r"\[:(.*?):\]", r" \1 \1 ", lyrics, flags=re.DOTALL)
+                lyrics = re.sub(r"\[:\s*(.*?)\s*:\]", lyrics_repetition, lyrics, flags=re.DOTALL)
                 lyrics = re.sub(r"\s+", " ", lyrics)
                 ly_lyrics += f"sloka{roman[i]} = \\lyricmode {{ \\set stanza = \"{s_no}.\"\n"
                 ly_lyrics += lyrics
