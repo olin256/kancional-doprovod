@@ -15,8 +15,9 @@ def merge_parts(root):
             for note in part.iter("note"):
                 if note.find("staff") is None:
                     if note.find("rest") is None:
-                        if (prev_el := note.find("stem")) is None:
-                            prev_el = note.find("type")
+                        for el in ["stem", "dot", "type"]:
+                            if (prev_el := note.find(el)) is not None:
+                                break
                         prev_el.addnext(deepcopy(staff_el))
                     else:
                         note.append(deepcopy(staff_el))
