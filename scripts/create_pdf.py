@@ -14,6 +14,19 @@ easy_keys = [
 ]
 
 
+def split_and_remember(s, delimiters):
+    regex = '({})'.format('|'.join(map(re.escape, delimiters)))
+    raw = re.split(regex, s)
+    parts = raw[::2]
+    splitters = raw[1::2]
+    # If string ends with text, splitters will be one shorter;
+    # To get "between", always make len(splitters) == len(parts)-1,
+    # so append '' if needed.
+    if len(splitters) < len(parts):
+        splitters.append('')
+    return parts, splitters
+
+
 def transpose_str(fifths, shift):
     semitones_from_c = (7 * fifths) % 12
     target = semitones_from_c + shift
@@ -81,7 +94,9 @@ roman = (
 
 for song, song_name in tqdm(songs.items()):
     with open(f"../song_data/{song}.json", "r", encoding="utf-8") as f:
-        stanzas = json.load(f)["stanzas"]
+        jf = json.load(f)
+        stanzas = jf["stanzas"]
+        stanza_lengths = jf["stanza_lengths"]
 
     for s in stanzas:
         s["section"] = str(s["section"] or "")
@@ -137,6 +152,23 @@ for song, song_name in tqdm(songs.items()):
 
             for i, (s_no, s) in enumerate(current_stanzas.items()):
                 lyrics = s["lyrics"]
+
+                delims = [" ", "--", "\xa0", "\n"]
+                slb, slb_splitters = split_and_remember(lyrics, delims)
+
+                off = 0
+                sln = s['stanza_sheet']
+                sl = stanza_lengths[str(sln)]
+                for sl_i, sl_v in (list(enumerate(sl))):
+                    for _ in range(sl_v):
+                        slb.insert(sl_i + off + 1, " _ ")
+                        slb_splitters.insert(sl_i + off + 1, "")
+                        off += 1
+
+                lyrics= ''.join([
+                    p + d for p, d in zip(slb, slb_splitters)
+                ])
+
                 lyrics = re.sub(r"-+", " -- ", lyrics)
                 lyrics = re.sub(
                     r"\[:\s*(.*?)\s*:\]", lyrics_repetition,
