@@ -62,6 +62,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--full", action=argparse.BooleanOptionalAction)
 parser.add_argument("-i", "--inspect", action=argparse.BooleanOptionalAction)
 parser.add_argument("-s", "--skip-bad", action=argparse.BooleanOptionalAction)
+parser.add_argument("-S", "--noshell", action=argparse.BooleanOptionalAction)
+parser.add_argument("-O", "--overwrite", action=argparse.BooleanOptionalAction)
 args = parser.parse_args()
 
 if args.full:
@@ -231,7 +233,7 @@ for song, song_name in tqdm(songs.items()):
                 crop_fname = f"../pdf_crop/{fn_shift}.pdf"
                 final_fname = f"../pdf/{fn_shift}.pdf"
 
-                if os.path.isfile(final_fname):
+                if not args.overwrite and os.path.isfile(final_fname):
                     continue
 
                 score_template_transposed = score_template.replace(
@@ -272,7 +274,7 @@ for song, song_name in tqdm(songs.items()):
                         "-dinclude-settings=../ly_templates/common.ly",
                         "-o", pdf_fname, "-"
                     ],
-                    shell=True, encoding="utf-8", text=True,
+                    shell=not args.noshell, encoding="utf-8", text=True,
                     input=ly_source, capture_output=True
                 )
 
@@ -290,7 +292,7 @@ for song, song_name in tqdm(songs.items()):
 
                 subprocess.run(
                     ["pdfcrop", pdf_fname, crop_fname],
-                    shell=True, capture_output=True
+                    shell=not args.noshell, capture_output=True
                 )
 
                 transp_str = (
@@ -308,5 +310,5 @@ for song, song_name in tqdm(songs.items()):
                         "--output-directory=../pdf",
                         tex_templates[song_type]
                     ],
-                    shell=True, capture_output=True
+                    shell=not args.noshell, capture_output=True
                 )
