@@ -64,6 +64,7 @@ parser.add_argument("-i", "--inspect", action=argparse.BooleanOptionalAction)
 parser.add_argument("-s", "--skip-bad", action=argparse.BooleanOptionalAction)
 parser.add_argument("-S", "--noshell", action=argparse.BooleanOptionalAction)
 parser.add_argument("-O", "--overwrite", action=argparse.BooleanOptionalAction)
+parser.add_argument("-L", "--generate-ly", action=argparse.BooleanOptionalAction)
 args = parser.parse_args()
 
 if args.full:
@@ -268,14 +269,18 @@ for song, song_name in tqdm(songs.items()):
                         ly_source += "\\pageBreak\n\n"
                     ly_source += curr_score_template
 
+                if args.generate_ly:
+                    with open(f"../ly/{fn_shift}.ly", "w", encoding="utf-8") as f:
+                        f.write(ly_source)
+
                 res = subprocess.run(
                     [
                         "lilypond",
                         "-dinclude-settings=../ly_templates/common.ly",
-                        "-o", pdf_fname, "-"
+                        "-o", pdf_fname, (f"../ly/{fn_shift}.ly" if args.generate_ly else "-")
                     ],
                     shell=not args.noshell, encoding="utf-8", text=True,
-                    input=ly_source, capture_output=True
+                    input=(None if args.generate_ly else ly_source), capture_output=True
                 )
 
                 stderr = res.stderr.lower()
