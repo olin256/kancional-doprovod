@@ -14,6 +14,19 @@ easy_keys = [
 ]
 
 
+def split_and_remember(s, delimiters):
+    regex = '({})'.format('|'.join(map(re.escape, delimiters)))
+    raw = re.split(regex, s)
+    parts = raw[::2]
+    splitters = raw[1::2]
+    # If string ends with text, splitters will be one shorter;
+    # To get "between", always make len(splitters) == len(parts)-1,
+    # so append '' if needed.
+    if len(splitters) < len(parts):
+        splitters.append('')
+    return parts, splitters
+
+
 def transpose_str(fifths, shift):
     semitones_from_c = (7 * fifths) % 12
     target = semitones_from_c + shift
@@ -49,6 +62,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--full", action=argparse.BooleanOptionalAction)
 parser.add_argument("-i", "--inspect", action=argparse.BooleanOptionalAction)
 parser.add_argument("-s", "--skip-bad", action=argparse.BooleanOptionalAction)
+parser.add_argument("-S", "--noshell", action=argparse.BooleanOptionalAction)
+parser.add_argument("-O", "--overwrite", action=argparse.BooleanOptionalAction)
+parser.add_argument("-L", "--generate-ly", action=argparse.BooleanOptionalAction)
 args = parser.parse_args()
 
 if args.full:
@@ -81,7 +97,9 @@ roman = (
 
 for song, song_name in tqdm(songs.items()):
     with open(f"../song_data/{song}.json", "r", encoding="utf-8") as f:
-        stanzas = json.load(f)["stanzas"]
+        jf = json.load(f)
+        stanzas = jf["stanzas"]
+        stanza_lengths = jf["stanza_lengths"]
 
     for s in stanzas:
         s["section"] = str(s["section"] or "")
@@ -137,6 +155,23 @@ for song, song_name in tqdm(songs.items()):
 
             for i, (s_no, s) in enumerate(current_stanzas.items()):
                 lyrics = s["lyrics"]
+
+                delims = [" ", "--", "\xa0", "\n"]
+                slb, slb_splitters = split_and_remember(lyrics, delims)
+
+                off = 0
+                sln = s['stanza_sheet']
+                sl = stanza_lengths[str(sln)]
+                for sl_i, sl_v in (list(enumerate(sl))):
+                    for _ in range(sl_v):
+                        slb.insert(sl_i + off + 1, " _ ")
+                        slb_splitters.insert(sl_i + off + 1, "")
+                        off += 1
+
+                lyrics= ''.join([
+                    p + d for p, d in zip(slb, slb_splitters)
+                ])
+
                 lyrics = re.sub(r"-+", " -- ", lyrics)
                 lyrics = re.sub(
                     r"\[:\s*(.*?)\s*:\]", lyrics_repetition,
@@ -199,7 +234,7 @@ for song, song_name in tqdm(songs.items()):
                 crop_fname = f"../pdf_crop/{fn_shift}.pdf"
                 final_fname = f"../pdf/{fn_shift}.pdf"
 
-                if os.path.isfile(final_fname):
+                if not args.overwrite and os.path.isfile(final_fname):
                     continue
 
                 score_template_transposed = score_template.replace(
@@ -234,14 +269,18 @@ for song, song_name in tqdm(songs.items()):
                         ly_source += "\\pageBreak\n\n"
                     ly_source += curr_score_template
 
+                if args.generate_ly:
+                    with open(f"../ly/{fn_shift}.ly", "w", encoding="utf-8") as f:
+                        f.write(ly_source)
+
                 res = subprocess.run(
                     [
                         "lilypond",
                         "-dinclude-settings=../ly_templates/common.ly",
-                        "-o", pdf_fname, "-"
+                        "-o", pdf_fname, (f"../ly/{fn_shift}.ly" if args.generate_ly else "-")
                     ],
-                    shell=True, encoding="utf-8", text=True,
-                    input=ly_source, capture_output=True
+                    shell=not args.noshell, encoding="utf-8", text=True,
+                    input=(None if args.generate_ly else ly_source), capture_output=True
                 )
 
                 stderr = res.stderr.lower()
@@ -258,7 +297,7 @@ for song, song_name in tqdm(songs.items()):
 
                 subprocess.run(
                     ["pdfcrop", pdf_fname, crop_fname],
-                    shell=True, capture_output=True
+                    shell=not args.noshell, capture_output=True
                 )
 
                 transp_str = (
@@ -276,5 +315,5 @@ for song, song_name in tqdm(songs.items()):
                         "--output-directory=../pdf",
                         tex_templates[song_type]
                     ],
-                    shell=True, capture_output=True
+                    shell=not args.noshell, capture_output=True
                 )

@@ -141,6 +141,8 @@ def musicxml_to_ly(xml_file):
 
         voice_start_els = []
 
+        # INFO: one can experiment with "melismaBusy slurMelismaBusy tieMelismaBusy"
+        voice_start_els.append(f"\\set melismaBusyProperties = #'()")
         voice_start_els.append("\\clef " + ('"bass"' if voice > 2 else '"treble"'))
         voice_start_els.append("\\key " + key)
         voice_start = " ".join(voice_start_els)
